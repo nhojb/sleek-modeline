@@ -16,6 +16,7 @@
 ;;; Code:
 
 (require 'sleek-modeline-helpers)
+(require 'sleek-modeline-vc)
 
 (defvar sleek-modeline-format
   '("%e"
@@ -23,7 +24,9 @@
     (:eval (sleek-modeline-modal-state-marker))
     (:eval (sleek-modeline-buffer-name))
     " "
-    (:eval (sleek-modeline-major-mode)))
+    (:eval (sleek-modeline-major-mode))
+    " "
+    (:eval (sleek-modeline-vc)))
   "The sleek mode-line format.")
 
 (defvar sleek-modeline--default-mode-line mode-line-format

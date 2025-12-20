@@ -34,6 +34,24 @@
   "Face for major mode in `sleek-modeline'."
   :group 'sleek-modeline-faces)
 
+(defface sleek-modeline-vc-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for version control info in `sleek-modeline'.
+Used when the repository is in a clean state."
+  :group 'sleek-modeline-faces)
+
+(defface sleek-modeline-vc-modified-face
+  '((t (:inherit font-lock-variable-name-face)))
+  "Face for version control info when there are modifications.
+Used for edited, added, or needs-update states."
+  :group 'sleek-modeline-faces)
+
+(defface sleek-modeline-vc-conflict-face
+  '((t (:inherit error)))
+  "Face for version control info when there are conflicts.
+Used for removed, conflict, unregistered, or needs-merge states."
+  :group 'sleek-modeline-faces)
+
 (provide 'sleek-modeline-faces)
 
 ;;; sleek-modeline-faces.el ends here

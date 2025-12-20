@@ -1,0 +1,84 @@
+;;; sleek-modeline-vc.el --- Version control segment for sleek-modeline -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2025 Abidán Brito Clavijo
+;; Author: Abidán Brito Clavijo <abidan.brito@gmail.com>
+;; SPDX-License-Identifier: MIT
+
+;;; Commentary:
+;; Version control segment for the `sleek-modeline' package.
+;; Displays the current branch name and optionally a branch icon.
+
+;;; Code:
+
+(require 'vc)
+(require 'vc-git)
+(require 'sleek-modeline-faces)
+
+;; NOTE(abi): optional dependency; only gets loaded if available.
+(declare-function nerd-icons-octicon "nerd-icons")
+
+(defcustom sleek-modeline-vc-show-icon t
+  "Whether to show the branch icon in the version control segment.
+Requires `nerd-icons' package to be installed."
+  :type 'boolean
+  :group 'sleek-modeline)
+
+(defcustom sleek-modeline-vc-use-github-icon nil
+  "Whether to use the GitHub icon instead of the git branch icon.
+When non-nil, shows the GitHub mark icon.
+When nil, shows the git branch icon."
+  :type 'boolean
+  :group 'sleek-modeline)
+
+(defun sleek-modeline-vc--branch-icon ()
+  "Return the appropriate branch icon based on configuration.
+Returns empty string if icons are disabled or nerd-icons is not available."
+  (when (and sleek-modeline-vc-show-icon
+             sleek-modeline-show-icons
+             (featurep 'nerd-icons))
+    (if sleek-modeline-vc-use-github-icon
+        (nerd-icons-octicon "nf-oct-mark_github")
+      (nerd-icons-octicon "nf-oct-git_branch"))))
+
+(defun sleek-modeline-vc--branch-name ()
+  "Get the current branch name from `vc-mode'.
+Returns nil if not in a version-controlled file."
+  (when (and vc-mode buffer-file-name)
+    (let* ((backend (vc-backend buffer-file-name))
+           (branch (when backend
+                     (substring-no-properties
+                      (or (pcase backend
+                            ('Git (substring vc-mode 5))
+                            ('Hg (substring vc-mode 4))
+                            (_ vc-mode))
+                          "")))))
+      (when (and branch (not (string-empty-p branch)))
+        (replace-regexp-in-string "^Git[:-]" "" branch)))))
+
+(defun sleek-modeline-vc--state-face ()
+  "Return the appropriate face based on VC state.
+Uses different faces for modified, conflict, and clean states."
+  (if-let* ((file buffer-file-name)
+            (state (vc-state file)))
+      (cond
+       ((memq state '(edited added)) 'sleek-modeline-vc-modified-face)
+       ((memq state '(removed conflict unregistered)) 'sleek-modeline-vc-conflict-face)
+       ((eq state 'needs-merge) 'sleek-modeline-vc-conflict-face)
+       ((eq state 'needs-update) 'sleek-modeline-vc-modified-face)
+       (t 'sleek-modeline-vc-face))
+    'sleek-modeline-vc-face))
+
+(defun sleek-modeline-vc ()
+  "Show version control information with icon and branch name.
+Returns empty string if not in a version-controlled file."
+  (when-let ((branch (sleek-modeline-vc--branch-name)))
+    (let ((icon (sleek-modeline-vc--branch-icon))
+          (face (sleek-modeline-vc--state-face)))
+      (concat
+       (when icon
+         (concat (propertize icon 'face face) " "))
+       (propertize branch 'face face)))))
+
+(provide 'sleek-modeline-vc)
+
+;;; sleek-modeline-vc.el ends here
