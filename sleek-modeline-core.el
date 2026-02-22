@@ -10,6 +10,9 @@
 
 ;;; Code:
 
+(require 'color)
+(require 'cl-lib)
+
 ;; NOTE(abi): optional dependency; only gets loaded if available.
 (declare-function nerd-icons-icon-for-file "nerd-icons")
 
@@ -86,7 +89,7 @@ When non-nil, modified buffers will use
   :group 'sleek-modeline-faces)
 
 (defface sleek-modeline-major-mode-face
-  '((t (:inherit font-lock-keyword-face :weight bold :slant normal)))
+  '((t (:inherit font-lock-function-name-face :weight bold :slant normal)))
   "Face for major mode in `sleek-modeline'."
   :group 'sleek-modeline-faces)
 
@@ -130,7 +133,7 @@ Used for removed, conflict, unregistered, or needs-merge states."
   :group 'sleek-modeline-faces)
 
 (defface sleek-modeline-separator-face
-  '((t (:inherit font-lock-comment-face)))
+  '((t (:inherit shadow)))
   "Face for the separator between segments in `sleek-modeline'."
   :group 'sleek-modeline-faces)
 
@@ -226,7 +229,8 @@ Returns the box line-width value to use for the mode-line."
         (set-face-attribute 'mode-line-inactive nil
                             :box `(:line-width ,height :color ,bg)
                             :underline nil)))
-    ;; Force redisplay
+
+    (sleek-modeline--update-separator-face)
     (force-mode-line-update t)))
 
 (defun sleek-modeline--line-ending ()
@@ -248,6 +252,22 @@ Returns the box line-width value to use for the mode-line."
 (defun sleek-modeline--separator ()
   "Return the propertized segment separator."
   (propertize sleek-modeline-separator 'face 'sleek-modeline-separator-face))
+
+
+(defun sleek-modeline--blend-colors (c1 c2 alpha)
+  "Blend C1 toward C2 by ALPHA (0.0 = C2, 1.0 = C1)."
+  (apply #'color-rgb-to-hex
+         (cl-mapcar (lambda (a b) (+ (* alpha a) (* (- 1.0 alpha) b)))
+                    (color-name-to-rgb c1)
+                    (color-name-to-rgb c2))))
+
+(defun sleek-modeline--update-separator-face ()
+  "Set separator face to a dimmed version of the shadow face foreground."
+  (let ((shadow-fg (face-foreground 'shadow nil t))
+        (bg (face-background 'default nil t)))
+    (when (and shadow-fg bg)
+      (set-face-attribute 'sleek-modeline-separator-face nil
+                          :foreground (sleek-modeline--blend-colors shadow-fg bg 0.5)))))
 
 (provide 'sleek-modeline-core)
 ;;; sleek-modeline-core.el ends here
