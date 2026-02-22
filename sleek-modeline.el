@@ -21,14 +21,15 @@
 (defvar sleek-modeline-format
   '("%e"
     " "
-    (:eval (sleek-modeline-modal-state-marker))
+    (:eval (when-let ((marker (sleek-modeline-modal-state-marker)))
+	     (concat marker " ")))
     (:eval (sleek-modeline-buffer-name))
-    (:eval (when-let ((vc (sleek-modeline-vc)))
-             (concat " " vc)))
     mode-line-format-right-align
     (:eval (when-let ((eol (sleek-modeline-line-ending-indicator)))
              (unless (string-empty-p eol)
                (concat eol " "))))
+    (:eval (when-let ((vc (sleek-modeline-vc)))
+             (concat vc " ")))
     (:eval (sleek-modeline-major-mode))
     " ")
   "The sleek mode-line format.")
@@ -63,9 +64,16 @@
     (advice-remove 'enable-theme #'sleek-modeline--after-theme-change)
     
     (when (facep 'mode-line)
-      (set-face-attribute 'mode-line nil :box 'unspecified :underline 'unspecified))
+      (set-face-attribute 'mode-line nil
+			  :box 'unspecified
+			  :overline 'unspecified
+			  :underline 'unspecified))
+
     (when (facep 'mode-line-inactive)
-      (set-face-attribute 'mode-line-inactive nil :box 'unspecified :underline 'unspecified)))
+      (set-face-attribute 'mode-line-inactive nil
+			  :box 'unspecified
+			  :overline 'unspecified
+			  :underline 'unspecified)))
   
   (force-mode-line-update t))
 
