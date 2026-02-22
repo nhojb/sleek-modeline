@@ -23,10 +23,14 @@
     " "
     (:eval (sleek-modeline-modal-state-marker))
     (:eval (sleek-modeline-buffer-name))
-    " "
+    (:eval (when-let ((vc (sleek-modeline-vc)))
+             (concat " " vc)))
+    mode-line-format-right-align
+    (:eval (when-let ((eol (sleek-modeline-line-ending-indicator)))
+             (unless (string-empty-p eol)
+               (concat eol " "))))
     (:eval (sleek-modeline-major-mode))
-    " "
-    (:eval (sleek-modeline-vc)))
+    " ")
   "The sleek mode-line format.")
 
 (defvar sleek-modeline--default-mode-line mode-line-format
@@ -66,5 +70,4 @@
   (force-mode-line-update t))
 
 (provide 'sleek-modeline)
-
 ;;; sleek-modeline.el ends here

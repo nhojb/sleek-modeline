@@ -1,4 +1,4 @@
-;;; sleek-modeline-helpers.el --- Helper functions for sleek-modeline -*- lexical-binding: t; -*-
+;;; sleek-modeline-core.el --- Helper functions for sleek-modeline -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2025 Abidán Brito Clavijo
 ;; Author: Abidán Brito Clavijo <abidan.brito@gmail.com>
@@ -60,7 +60,8 @@ Requires `nerd-icons' package to be installed."
 
 (defcustom sleek-modeline-highlight-modified-buffer-name t
   "Whether to highlight the buffer name when it has unsaved changes.
-When non-nil, modified buffers will use the `sleek-modeline-buffer-name-modified-face'."
+When non-nil, modified buffers will use
+`sleek-modeline-buffer-name-modified-face'."
   :type 'boolean
   :group 'sleek-modeline)
 
@@ -80,7 +81,7 @@ When non-nil, modified buffers will use the `sleek-modeline-buffer-name-modified
   :group 'sleek-modeline-faces)
 
 (defface sleek-modeline-major-mode-face
-  '((t (:inherit font-lock-doc-face :slant italic)))
+  '((t (:inherit font-lock-keyword-face :weight bold :slant normal)))
   "Face for major mode in `sleek-modeline'."
   :group 'sleek-modeline-faces)
 
@@ -102,6 +103,11 @@ Used for edited, added, or needs-update states."
 Used for removed, conflict, unregistered, or needs-merge states."
   :group 'sleek-modeline-faces)
 
+(defface sleek-modeline-line-ending-face
+  '((t (:inherit font-lock-doc-face :slant normal)))
+  "Face for the line ending indicator in `sleek-modeline'."
+  :group 'sleek-modeline-faces)
+
 (defun sleek-modeline-buffer-name ()
   "Show buffer name with custom face and icon (if available).
 Changes color when buffer is modified."
@@ -121,9 +127,12 @@ Changes color when buffer is modified."
       (propertize buffer-name 'face face))))
 
 (defun sleek-modeline-major-mode ()
-  "Show major mode with custom face."
-  (propertize (substring-no-properties (format-mode-line mode-name))
-              'face 'sleek-modeline-major-mode-face))
+  "Show major mode with custom face, stripping mode-line suffix indicators.
+For example, \"Emacs-Lisp/l\" becomes \"Emacs-Lisp\" and \"C++//\" becomes \"C++\"."
+  (let ((name (replace-regexp-in-string
+               "/.*\\'" ""
+               (substring-no-properties (format-mode-line mode-name)))))
+    (propertize name 'face 'sleek-modeline-major-mode-face)))
 
 (defun sleek-modeline--modal-state ()
   "Return the current modal editing state as a single letter, or nil.
@@ -191,6 +200,21 @@ Returns the box line-width value to use for the mode-line."
     ;; Force redisplay
     (force-mode-line-update t)))
 
-(provide 'sleek-modeline-core)
+(defun sleek-modeline--line-ending ()
+  "Return a string describing the buffer's line ending convention."
+  (pcase (coding-system-eol-type buffer-file-coding-system)
+    (0 "LF")
+    (1 "CRLF")
+    (2 "CR")
+    (_ "—")))
 
+(defun sleek-modeline-line-ending-indicator ()
+  "Return a propertized line ending string, or empty string for non-file buffers."
+  (if buffer-file-name
+      (propertize (sleek-modeline--line-ending)
+                  'face 'sleek-modeline-line-ending-face
+                  'help-echo "Buffer line endings")
+    ""))
+
+(provide 'sleek-modeline-core)
 ;;; sleek-modeline-core.el ends here
