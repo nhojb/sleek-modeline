@@ -17,6 +17,7 @@
 
 (require 'sleek-modeline-core)
 (require 'sleek-modeline-vc)
+(require 'sleek-modeline-diagnostics)
 
 (defvar sleek-modeline-format
   '("%e"
@@ -25,6 +26,8 @@
              (concat marker " ")))
     (:eval (sleek-modeline-buffer-name))
     mode-line-format-right-align
+    (:eval (when-let ((diag (sleek-modeline-diagnostics)))
+             (concat diag (sleek-modeline--separator))))
     (:eval (when-let ((eol (sleek-modeline-line-ending-indicator)))
              (unless (string-empty-p eol)
                (concat eol (sleek-modeline--separator)))))
@@ -54,7 +57,8 @@
         (add-hook 'after-load-theme-hook #'sleek-modeline--update-faces)
         (advice-add 'load-theme :after #'sleek-modeline--after-theme-change)
         (advice-add 'enable-theme :after #'sleek-modeline--after-theme-change)
-        
+
+	(sleek-modeline-diagnostics-setup)
         (sleek-modeline--update-faces))
     
     (setq-default mode-line-format sleek-modeline--default-mode-line)
