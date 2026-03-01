@@ -1,0 +1,132 @@
+ #+title: sleek-modeline
+#+author: Abidán Brito Clavijo
+#+email: abidan.brito@gmail.com
+#+options: toc:2
+
+#+html: <div align="center">
+#+html: <a href="https://github.com/abidanBrito/sleek-modeline/actions/workflows/melpazoid.yml"><img alt="melpazoid" src="https://github.com/abidanBrito/region-cursors/actions/workflows/melpazoid.yml/badge.svg"/></a>
+#+html: <a href="https://github.com/abidanBrito/sleek-modeline"><img alt="status" src="https://img.shields.io/badge/status-WIP-red.svg"/></a>
+#+html: <a href="https://github.com/abidanBrito/sleek-modeline/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen.svg"/></a>
+#+html: </div>
+
+* Table of Contents
+
+- [[#Motivation][Motivation]]
+- [[#Features][Features]]
+- [[#Installation][Installation]]
+- [[#Customization][Customization]]
+- [[#Contributing][Contributing]]
+- [[#License][License]]
+  
+* Motivation
+
+The default Emacs mode-line is functional but visually dated and hard to configure. =sleek-modeline= replaces it with a minimal, elegant alternative that surfaces the most relevant information while keeping the implementation small and straightforward.
+
+* Features
+
++ Minimal, left/right-aligned layout.
++ Configurable size / height via a box property.
++ Buffer name with optional icon and modified-state highlighting.
++ Major mode display with suffix indicators stripped.
++ Modal editing state marker (=evil= and =meow= support).
++ Line ending indicator (shown only for file-backed buffers).
++ Version control segment: branch name with icon and state-aware coloring.
++ Diagnostics segment: flycheck integration with error, warning and info counts.
++ Optional =nerd-icons= support throughout, with Unicode fallbacks when unavailable.
++ Adapts to theme changes automatically.
+
+* Installation
+** With =use-package=
+
+*** From source
+
+Clone the repo and point =use-package= at it:
+
+#+begin_src emacs-lisp
+  (use-package sleek-modeline
+    :load-path "~/path/to/sleek-modeline"
+    :config
+    (sleek-modeline-mode 1))
+#+end_src
+
+*** From GitHub using =straight.el=
+
+#+begin_src emacs-lisp
+  (use-package sleek-modeline
+    :straight (sleek-modeline
+               :type git
+               :host github
+               :repo "abidanBrito/sleek-modeline")
+    :config
+    (sleek-modeline-mode 1))
+#+end_src
+
+** Without =use-package=
+
+Clone the repo and load it:
+
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "~/path/to/sleek-modeline")
+
+  (require 'sleek-modeline)
+  (sleek-modeline-mode 1)
+#+end_src
+* Customization
+
+All options live under =M-x customize-group RET sleek-modeline=. Here are the main ones:
+
+** General
+
+| Variable                                      | Default | Description                                                          |
+|-----------------------------------------------+---------+----------------------------------------------------------------------|
+| =sleek-modeline-size=                           | =small=   | Mode-line height: =small=, =medium= or =large=.                            |
+| =sleek-modeline-height=                         | =nil=     | Custom box height in pixels. Overrides =sleek-modeline-size= when set. |
+| =sleek-modeline-show-icons=                     | =t=       | Show nerd-icons throughout. Requires =nerd-icons=.                     |
+| =sleek-modeline-highlight-modified-buffer-name= | =t=       | Highlight the buffer name when it has unsaved changes.               |
+| =sleek-modeline-show-modal-state=               | =nil=     | Show a modal editing state marker (=evil= / =meow=).                     |
+| =sleek-modeline-separator=                      | =" » "=   | Separator string between right-side segments.                        |
+
+** Version Control
+
+| Variable                          | Default | Description                                              |
+|-----------------------------------+---------+----------------------------------------------------------|
+| =sleek-modeline-vc-show-icon=       | =t=       | Show a branch icon. Requires =nerd-icons=.                 |
+| =sleek-modeline-vc-use-github-icon= | =nil=     | Use the GitHub mark icon instead of the git branch icon. |
+
+** Diagnostics
+
+| Variable                                    | Default   | Description                            |
+|---------------------------------------------+-----------+----------------------------------------|
+| =sleek-modeline-diagnostics-show-info=      | =t=       | Show info-level diagnostics.           |
+| =sleek-modeline-diagnostics-error-symbol=   | ="✕"=     | Symbol for errors.                     |
+| =sleek-modeline-diagnostics-warning-symbol= | ="▲"=     | Symbol for warnings.                   |
+| =sleek-modeline-diagnostics-info-symbol=    | ="●"=     | Symbol for info notes.                 |
+| =sleek-modeline-diagnostics-ok-symbol=      | =nil=     | Symbol shown when the buffer is clean. |
+
+** Example configuration
+
+#+begin_src emacs-lisp
+  (use-package sleek-modeline
+    :straight (sleek-modeline
+               :type git
+               :host github
+               :repo "abidanBrito/sleek-modeline")
+    :custom
+    (sleek-modeline-size 'medium)
+    (sleek-modeline-show-modal-state t)
+    (sleek-modeline-separator " | ")
+    (sleek-modeline-vc-use-github-icon nil)
+    (sleek-modeline-diagnostics-ok-symbol "✓")
+    :config
+    (sleek-modeline-mode 1))
+#+end_src
+
+* Contributing
+
+Contributions are welcome. Please open an issue or pull request on [[https://github.com/abidanBrito/sleek-modeline][GitHub]].
+
+If you find a bug, include your Emacs version (=M-x emacs-version=), the =sleek-modeline= settings you're using and steps to reproduce.
+
+* License
+
+This repository is released under the MIT license. See [[file:LICENSE][LICENSE]] for more information.
