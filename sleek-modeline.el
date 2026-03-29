@@ -27,6 +27,11 @@
   :type 'boolean
   :group 'sleek-modeline)
 
+(defcustom sleek-modeline-edge-padding 2
+  "Number of spaces at the left and right edges of the mode-line."
+  :type 'integer
+  :group 'sleek-modeline)
+
 (defvar sleek-modeline--saved-modeline-attrs nil
   "Saved `mode-line' face attributes before sleek-modeline modified them.")
 
@@ -35,7 +40,7 @@
 
 (defvar sleek-modeline-format
   '("%e"
-    " "
+    (:eval (make-string sleek-modeline-edge-padding ?\s))
     (:eval (when-let ((marker (sleek-modeline-modal-state-marker)))
              (concat marker " ")))
     (:eval (sleek-modeline-buffer-name))
@@ -48,7 +53,7 @@
     (:eval (when-let ((vc (sleek-modeline-vc)))
              (concat vc (sleek-modeline--separator))))
     (:eval (sleek-modeline-major-mode))
-    " ")
+    (:eval (make-string sleek-modeline-edge-padding ?\s)))
   "The sleek mode-line format.")
 
 (defvar sleek-modeline--default-mode-line mode-line-format
