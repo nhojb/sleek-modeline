@@ -4,7 +4,7 @@
 
 ;; Author: Abidán Brito Clavijo <abidan.brito@gmail.com>
 ;; Version: 1.0
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: mode-line, faces
 ;; URL: https://github.com/abidanBrito/sleek-modeline
 ;; SPDX-License-Identifier: MIT
