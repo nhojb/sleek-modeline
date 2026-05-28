@@ -6,7 +6,9 @@
 
 ;;; Commentary:
 ;; Version control segment for the `sleek-modeline' package.
-;; Displays the current branch name and optionally a branch icon.
+;; Displays: [status-symbol] branch-name [icon]
+;; The branch name and icon share the mode-line foreground.
+;; The leading status symbol is state-coloured: `~' modified, `+' added, etc.
 
 ;;; Code:
 
@@ -36,6 +38,13 @@ When nil, shows the git branch icon."
 
 (defcustom sleek-modeline-hide-vc-branch-inactive nil
   "Hide the version control branch name in inactive modelines."
+  :type 'boolean
+  :group 'sleek-modeline)
+
+(defcustom sleek-modeline-vc-show-status-symbol t
+  "Whether to show a symbol indicating the VC state after the branch name.
+When non-nil, appends a symbol: `~' modified, `+' added, `-' removed,
+`!' conflict/needs-merge, `↓' needs-update, `?' unregistered."
   :type 'boolean
   :group 'sleek-modeline)
 
@@ -103,19 +112,42 @@ Returns nil if not in a version-controlled file."
      ((eq state 'needs-update) 'sleek-modeline-vc-modified-face)
      (t 'sleek-modeline-vc-face))))
 
+(defun sleek-modeline-vc--status-symbol ()
+  "Return a propertized status symbol for the current VC state, or nil if clean."
+  (when sleek-modeline-vc-show-status-symbol
+    (let* ((state (sleek-modeline-vc--cached-state))
+           (sym (cond
+                 ((eq state 'edited) "~")
+                 ((eq state 'added) "+")
+                 ((eq state 'removed) "-")
+                 ((memq state '(conflict needs-merge)) "!")
+                 ((eq state 'needs-update) "↓")
+                 ((eq state 'unregistered) "?"))))
+      (when sym
+        (propertize sym 'face (sleek-modeline-vc--state-face))))))
+
 (defun sleek-modeline-vc ()
-  "Show version control information with icon and branch name.
+  "Show version control info as [status-symbol] branch-name [icon].
+The branch name and icon use the mode-line foreground.
+The status symbol is state-coloured and leads the segment when present.
 Returns nil if not in a version-controlled file or if an error occurs."
   (condition-case nil
       (when-let ((branch (sleek-modeline-vc--branch-name)))
-        (let* ((icon (sleek-modeline-vc--branch-icon))
-               (face (sleek-modeline-vc--state-face))
-               (branch-str (propertize branch 'face face)))
-          (sleek-modeline--maybe-dim-or-hide
-           (if icon
-               (concat icon " " branch-str)
-             branch-str)
-           sleek-modeline-hide-vc-branch-inactive)))
+        (let* ((symbol (sleek-modeline-vc--status-symbol))
+               (branch-str (propertize branch 'face 'sleek-modeline-vc-face))
+               (icon (let ((raw (sleek-modeline-vc--branch-icon)))
+                       (when raw
+                         (let ((fg (face-foreground 'mode-line nil t)))
+                           (when fg
+                             (add-face-text-property 0 (length raw)
+                                                     `(:foreground ,fg) nil raw)))
+                         raw)))
+               (content (cond
+                         ((and symbol icon) (concat symbol " " branch-str " " icon))
+                         (symbol (concat symbol " " branch-str))
+                         (icon (concat branch-str " " icon))
+                         (t branch-str))))
+          (sleek-modeline--maybe-dim-or-hide content sleek-modeline-hide-vc-branch-inactive)))
     (error nil)))
 
 ;;;###autoload
