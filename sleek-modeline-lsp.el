@@ -18,9 +18,12 @@
 ;; Optional dependencies, declared to silence the byte-compiler
 ;; NOTE(abi): these get loaded only if available.
 (eval-when-compile
+  (declare-function eglot-current-server "eglot")
   (declare-function eglot-managed-p "eglot")
+  (declare-function jsonrpc-name "jsonrpc")
   (declare-function lsp-workspaces "lsp-mode")
-  (declare-function nerd-icons-codicon "nerd-icons")
+  (declare-function lsp--workspace-server-id "lsp-mode")
+  (declare-function nerd-icons-faicon "nerd-icons")
   (defvar eglot--managed-mode)
   (defvar lsp-mode))
 
@@ -38,13 +41,18 @@ Displayed when `nerd-icons' is not available or icons are disabled."
   :type 'string
   :group 'sleek-modeline)
 
+(defcustom sleek-modeline-lsp-show-name nil
+  "When non-nil, show the LSP server name next to the icon."
+  :type 'boolean
+  :group 'sleek-modeline)
+
 (defcustom sleek-modeline-hide-lsp-inactive nil
   "Hide the LSP indicator in inactive modelines."
   :type 'boolean
   :group 'sleek-modeline)
 
 (defface sleek-modeline-lsp-face
-  '((t (:inherit success :weight bold)))
+  '((t (:inherit font-lock-keyword-face :weight bold)))
   "Face for the LSP indicator in `sleek-modeline'."
   :group 'sleek-modeline-faces)
 
@@ -61,14 +69,49 @@ Displayed when `nerd-icons' is not available or icons are disabled."
 Uses a nerd-icon when available and icons are enabled, otherwise
 falls back to `sleek-modeline-lsp-symbol'."
   (if (and sleek-modeline-show-icons (featurep 'nerd-icons))
-      (nerd-icons-codicon "nf-cod-plug")
+      (nerd-icons-faicon "nf-fa-bolt")
     sleek-modeline-lsp-symbol))
+
+(defun sleek-modeline-lsp--eglot-server-name ()
+  "Return a short display name for the active eglot server, or nil."
+  (when (and (featurep 'eglot)
+             (fboundp 'eglot-managed-p)
+             (eglot-managed-p)
+             (fboundp 'eglot-current-server)
+             (fboundp 'jsonrpc-name))
+    (when-let ((server (eglot-current-server)))
+      (let ((full-name (jsonrpc-name server)))
+        (if (string-match "/\\([^/]+\\))\\'" full-name)
+            (match-string 1 full-name)
+          full-name)))))
+
+(defun sleek-modeline-lsp--lsp-mode-server-name ()
+  "Return a display name for the active lsp-mode server/s, or nil."
+  (when (and (featurep 'lsp-mode)
+             (bound-and-true-p lsp-mode)
+             (fboundp 'lsp-workspaces)
+             (fboundp 'lsp--workspace-server-id))
+    (when-let ((workspaces (lsp-workspaces)))
+      (mapconcat (lambda (ws) (symbol-name (lsp--workspace-server-id ws)))
+                 workspaces ","))))
+
+(defun sleek-modeline-lsp--server-name ()
+  "Return the active LSP server name for the current buffer, or nil."
+  (or (sleek-modeline-lsp--eglot-server-name)
+      (sleek-modeline-lsp--lsp-mode-server-name)))
 
 (defun sleek-modeline-lsp--format ()
   "Build the propertized LSP indicator string."
-  (propertize (sleek-modeline-lsp--icon)
-              'face 'sleek-modeline-lsp-face
-              'help-echo "LSP server active"))
+  (let* ((icon (sleek-modeline-lsp--icon))
+         (server-name (sleek-modeline-lsp--server-name))
+         (text (if (and sleek-modeline-lsp-show-name server-name)
+                   (concat icon " " server-name)
+                 icon))
+         (lsp-label (propertize "LSP" 'face 'sleek-modeline-lsp-face))
+         (tooltip (if server-name
+                      (concat lsp-label " :: " server-name)
+                    lsp-label)))
+    (propertize text 'face 'sleek-modeline-lsp-face 'help-echo tooltip)))
 
 (defun sleek-modeline-lsp--eglot-update (&rest _)
   "Recompute the LSP cache from the current eglot state."
