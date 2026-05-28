@@ -24,6 +24,9 @@
 (declare-function sleek-modeline-project "sleek-modeline-project")
 (declare-function sleek-modeline-project-enable "sleek-modeline-project")
 (declare-function sleek-modeline-project-disable "sleek-modeline-project")
+(declare-function sleek-modeline-lsp "sleek-modeline-lsp")
+(declare-function sleek-modeline-lsp-enable "sleek-modeline-lsp")
+(declare-function sleek-modeline-lsp-disable "sleek-modeline-lsp")
 
 (defcustom sleek-modeline-enable-diagnostics t
   "Enable diagnostics segment integration in sleek-modeline."
@@ -34,6 +37,12 @@
   "Enable project name segment integration in sleek-modeline.
 Supports `projectile' and the built-in `project.el', preferring
 projectile when both are active."
+  :type 'boolean
+  :group 'sleek-modeline)
+
+(defcustom sleek-modeline-enable-lsp t
+  "Enable LSP segment integration in sleek-modeline.
+Supports `eglot' and `lsp-mode' backends."
   :type 'boolean
   :group 'sleek-modeline)
 
@@ -65,6 +74,8 @@ projectile when both are active."
                (concat eol (sleek-modeline--separator)))))
     (:eval (when-let ((vc (sleek-modeline-vc)))
              (concat vc (sleek-modeline--separator))))
+    (:eval (when-let ((lsp (sleek-modeline-lsp)))
+             (concat lsp (sleek-modeline--separator))))
     (:eval (sleek-modeline-major-mode))
     (:eval (make-string sleek-modeline-edge-padding ?\s)))
   "The sleek mode-line format.")
@@ -120,6 +131,7 @@ we read `(face-background 'default ...)'."
          (when (frame-live-p target-frame)
            (with-selected-frame target-frame
              (sleek-modeline--update-faces))))))))
+
 ;;;###autoload
 (define-minor-mode sleek-modeline-mode
   "Toggle sleek modeline on and off."
@@ -159,7 +171,11 @@ we read `(face-background 'default ...)'."
 	(when sleek-modeline-enable-project
 	  (require 'sleek-modeline-project nil t))
 
-        (sleek-modeline--update-faces))
+	;; Enable LSP segment if configured
+	(when sleek-modeline-enable-lsp
+	  (require 'sleek-modeline-lsp nil t)
+	  (sleek-modeline-lsp-enable))
+
 	;; Update faces now if a real (non-daemon-initial) frame exists;
 	;; otherwise defer the first update until a client frame shows up.
 	;; This fixes the startup-in-daemon-mode colour bug where faces were
@@ -195,7 +211,11 @@ we read `(face-background 'default ...)'."
 
     ;; Disable diagnostics segment if enabled
     (when sleek-modeline-enable-diagnostics
-      (sleek-modeline-diagnostics-disable)))
+      (sleek-modeline-diagnostics-disable))
+
+    ;; Disable LSP segment if enabled
+    (when sleek-modeline-enable-lsp
+      (sleek-modeline-lsp-disable)))
 
   (force-mode-line-update t))
 
