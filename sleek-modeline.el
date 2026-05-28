@@ -19,11 +19,16 @@
 (require 'sleek-modeline-vc)
 
 ;; Declare segment functions to quiet the byte-compiler
+(declare-function sleek-modeline-vc-enable "sleek-modeline-vc")
+(declare-function sleek-modeline-vc-disable "sleek-modeline-vc")
 (declare-function sleek-modeline-diagnostics-enable "sleek-modeline-diagnostics")
 (declare-function sleek-modeline-diagnostics-disable "sleek-modeline-diagnostics")
 (declare-function sleek-modeline-project "sleek-modeline-project")
 (declare-function sleek-modeline-project-enable "sleek-modeline-project")
 (declare-function sleek-modeline-project-disable "sleek-modeline-project")
+(declare-function sleek-modeline-lsp "sleek-modeline-lsp")
+(declare-function sleek-modeline-lsp-enable "sleek-modeline-lsp")
+(declare-function sleek-modeline-lsp-disable "sleek-modeline-lsp")
 
 (defcustom sleek-modeline-enable-diagnostics t
   "Enable diagnostics segment integration in sleek-modeline."
@@ -34,6 +39,12 @@
   "Enable project name segment integration in sleek-modeline.
 Supports `projectile' and the built-in `project.el', preferring
 projectile when both are active."
+  :type 'boolean
+  :group 'sleek-modeline)
+
+(defcustom sleek-modeline-enable-lsp t
+  "Enable LSP segment integration in sleek-modeline.
+Supports `eglot' and `lsp-mode' backends."
   :type 'boolean
   :group 'sleek-modeline)
 
@@ -65,6 +76,8 @@ projectile when both are active."
                (concat eol (sleek-modeline--separator)))))
     (:eval (when-let ((vc (sleek-modeline-vc)))
              (concat vc (sleek-modeline--separator))))
+    (:eval (when-let ((lsp (sleek-modeline-lsp)))
+             (concat lsp (sleek-modeline--separator))))
     (:eval (sleek-modeline-major-mode))
     (:eval (make-string sleek-modeline-edge-padding ?\s)))
   "The sleek mode-line format.")
@@ -75,6 +88,51 @@ projectile when both are active."
 (defun sleek-modeline--after-theme-change (&rest _)
   "Update faces after theme change."
   (run-with-timer 0.1 nil #'sleek-modeline--update-faces))
+
+(defun sleek-modeline--real-frame-p (frame)
+  "Return non-nil when FRAME is a real (non-daemon-initial) frame.
+The daemon creates an invisible stub frame associated with the special
+terminal named \"initial_terminal\".  That frame reports `framep' as t
+and `frame-visible-p' as t, so those predicates cannot distinguish it
+from a real TTY frame.  We match its terminal name directly, matching
+the approach used inside Emacs' own `debug.el'.  Nil FRAME means the
+selected frame."
+  (let ((f (or frame (selected-frame))))
+    (and (frame-live-p f)
+         (not (string-equal (terminal-name (frame-terminal f))
+                            "initial_terminal")))))
+
+(defun sleek-modeline--graphical-frame-exists-p ()
+  "Return non-nil when at least one real client frame exists.
+A \"real\" frame is either graphical or a TTY, excluding the daemon's
+initial invisible stub."
+  (and (not noninteractive)
+       (cl-some #'sleek-modeline--real-frame-p (frame-list))))
+
+(defun sleek-modeline--deferred-face-update (&optional frame)
+  "Recompute mode-line faces once a real client frame is available.
+Designed to be hung on `server-after-make-frame-hook' and
+`after-make-frame-functions'.  Runs a single face update in the
+context of FRAME (or the selected frame) on an idle timer so that
+face realisation on the new frame has a chance to complete before
+we read `(face-background 'default ...)'."
+  (when (and sleek-modeline-mode
+             (sleek-modeline--real-frame-p frame))
+    (remove-hook 'server-after-make-frame-hook
+                 #'sleek-modeline--deferred-face-update)
+    (remove-hook 'after-make-frame-functions
+                 #'sleek-modeline--deferred-face-update)
+    ;; Defer to the next idle moment so that the new frame is fully
+    ;; realised (theme applied, `default' background set).  Without this,
+    ;; `face-background' can still return the pre-theme colour that the
+    ;; daemon's initial frame had.
+    (let ((target-frame (or frame (selected-frame))))
+      (run-with-idle-timer
+       0 nil
+       (lambda ()
+         (when (frame-live-p target-frame)
+           (with-selected-frame target-frame
+             (sleek-modeline--update-faces))))))))
 
 ;;;###autoload
 (define-minor-mode sleek-modeline-mode
@@ -106,6 +164,9 @@ projectile when both are active."
         (advice-add 'load-theme :after #'sleek-modeline--after-theme-change)
         (advice-add 'enable-theme :after #'sleek-modeline--after-theme-change)
 
+	;; Enable vc segment cache hooks
+        (sleek-modeline-vc-enable)
+
 	;; Enable diagnostics segment if configured
 	(when sleek-modeline-enable-diagnostics
 	  (require 'sleek-modeline-diagnostics nil t)
@@ -115,7 +176,23 @@ projectile when both are active."
 	(when sleek-modeline-enable-project
 	  (require 'sleek-modeline-project nil t))
 
-        (sleek-modeline--update-faces))
+	;; Enable LSP segment if configured
+	(when sleek-modeline-enable-lsp
+	  (require 'sleek-modeline-lsp nil t)
+	  (sleek-modeline-lsp-enable))
+
+	;; Update faces now if a real (non-daemon-initial) frame exists;
+	;; otherwise defer the first update until a client frame shows up.
+	;; This fixes the startup-in-daemon-mode colour bug where faces were
+	;; computed against the daemon's initial frame (whose `default'
+	;; background is unthemed), producing a too-bright modeline until
+	;; the server was restarted.
+	(if (sleek-modeline--graphical-frame-exists-p)
+	    (sleek-modeline--update-faces)
+	  (add-hook 'server-after-make-frame-hook
+		    #'sleek-modeline--deferred-face-update)
+	  (add-hook 'after-make-frame-functions
+		    #'sleek-modeline--deferred-face-update)))
 
     ;; Restore original format & face attributes
     (setq-default mode-line-format sleek-modeline--default-mode-line)
@@ -130,12 +207,23 @@ projectile when both are active."
 
     ;; Remove hooks and advices added by sleek-modeline
     (remove-hook 'after-load-theme-hook #'sleek-modeline--update-faces)
+    (remove-hook 'server-after-make-frame-hook
+                 #'sleek-modeline--deferred-face-update)
+    (remove-hook 'after-make-frame-functions
+                 #'sleek-modeline--deferred-face-update)
     (advice-remove 'load-theme #'sleek-modeline--after-theme-change)
     (advice-remove 'enable-theme #'sleek-modeline--after-theme-change)
 
+    ;; Disable vc segment cache hooks
+    (sleek-modeline-vc-disable)
+
     ;; Disable diagnostics segment if enabled
     (when sleek-modeline-enable-diagnostics
-      (sleek-modeline-diagnostics-disable)))
+      (sleek-modeline-diagnostics-disable))
+
+    ;; Disable LSP segment if enabled
+    (when sleek-modeline-enable-lsp
+      (sleek-modeline-lsp-disable)))
 
   (force-mode-line-update t))
 

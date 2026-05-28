@@ -137,13 +137,13 @@ If nil, derives from `default` face."
   "Face for other modal states." :group 'sleek-modeline-faces)
 
 (defface sleek-modeline-vc-face
-  '((t (:inherit font-lock-comment-face :weight bold :slant italic)))
-  "Face for version control info in `sleek-modeline'.
-Used when the repository is in a clean state."
+  '((t (:weight bold)))
+  "Face for the branch icon and branch name in `sleek-modeline'.
+Static — does not change with VC state; foreground falls through to mode-line."
   :group 'sleek-modeline-faces)
 
 (defface sleek-modeline-vc-modified-face
-  '((t (:inherit font-lock-variable-name-face :weight bold :slant italic)))
+  '((t (:inherit font-lock-warning-face :weight bold :slant italic)))
   "Face for version control info when there are modifications.
 Used for edited, added, or needs-update states."
   :group 'sleek-modeline-faces)

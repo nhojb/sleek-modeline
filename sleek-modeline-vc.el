@@ -6,7 +6,9 @@
 
 ;;; Commentary:
 ;; Version control segment for the `sleek-modeline' package.
-;; Displays the current branch name and optionally a branch icon.
+;; Displays: [status-symbol] branch-name [icon]
+;; The branch name and icon share the mode-line foreground.
+;; The leading status symbol is state-coloured: `~' modified, `+' added, etc.
 
 ;;; Code:
 
@@ -39,6 +41,46 @@ When nil, shows the git branch icon."
   :type 'boolean
   :group 'sleek-modeline)
 
+(defcustom sleek-modeline-vc-show-status-symbol t
+  "Whether to show a symbol indicating the VC state after the branch name.
+When non-nil, appends a symbol: `~' modified, `+' added, `-' removed,
+`!' conflict/needs-merge, `↓' needs-update, `?' unregistered."
+  :type 'boolean
+  :group 'sleek-modeline)
+
+(defvar sleek-modeline-vc--enabled nil
+  "Non-nil means vc segment hooks are installed globally.")
+
+(defvar-local sleek-modeline-vc--state-cache 'unset
+  "Buffer-local cached `vc-state' result.
+The symbol `unset' means the cache has not been populated yet.")
+
+(defun sleek-modeline-vc--invalidate-cache ()
+  "Invalidate `vc-state' cache for the current buffer."
+  (setq sleek-modeline-vc--state-cache 'unset)
+  (force-mode-line-update))
+
+(defun sleek-modeline-vc--post-command (_command _flags-or-buffer file-or-list)
+  "Invalidate `vc-state' cache for buffers affected by a VC command.
+FILE-OR-LIST is either a single file path or a list of file paths.
+Implements the `vc-post-command-functions' abnormal hook signature."
+  (let ((files (if (listp file-or-list) file-or-list (list file-or-list))))
+    (dolist (file files)
+      (when (stringp file)
+        (when-let ((buf (find-buffer-visiting (expand-file-name file))))
+          (with-current-buffer buf
+            (sleek-modeline-vc--invalidate-cache)))))))
+
+(defun sleek-modeline-vc--cached-state ()
+  "Return `vc-state' for the current buffer; computed lazily if needed."
+  (when (eq sleek-modeline-vc--state-cache 'unset)
+    (setq sleek-modeline-vc--state-cache
+          (when buffer-file-name
+            (condition-case nil
+                (vc-state buffer-file-name)
+              (error nil)))))
+  sleek-modeline-vc--state-cache)
+
 (defun sleek-modeline-vc--branch-icon ()
   "Return the appropriate branch icon based on configuration.
 Returns empty string if icons are disabled, nerd-icons is not available,
@@ -61,32 +103,75 @@ Returns nil if not in a version-controlled file."
           branch)))))
 
 (defun sleek-modeline-vc--state-face ()
-  "Return the appropriate face based on VC state.
-Uses different faces for modified, conflict, and clean states."
-  (if-let* ((file buffer-file-name)
-            (state (vc-state file)))
-      (cond
-       ((memq state '(edited added)) 'sleek-modeline-vc-modified-face)
-       ((memq state '(removed conflict unregistered)) 'sleek-modeline-vc-conflict-face)
-       ((eq state 'needs-merge) 'sleek-modeline-vc-conflict-face)
-       ((eq state 'needs-update) 'sleek-modeline-vc-modified-face)
-       (t 'sleek-modeline-vc-face))
-    'sleek-modeline-vc-face))
+  "Return the appropriate face based on cached VC state."
+  (let ((state (sleek-modeline-vc--cached-state)))
+    (cond
+     ((memq state '(edited added)) 'sleek-modeline-vc-modified-face)
+     ((memq state '(removed conflict unregistered)) 'sleek-modeline-vc-conflict-face)
+     ((eq state 'needs-merge) 'sleek-modeline-vc-conflict-face)
+     ((eq state 'needs-update) 'sleek-modeline-vc-modified-face)
+     (t 'sleek-modeline-vc-face))))
+
+(defun sleek-modeline-vc--status-symbol ()
+  "Return a propertized status symbol for the current VC state, or nil if clean."
+  (when sleek-modeline-vc-show-status-symbol
+    (let* ((state (sleek-modeline-vc--cached-state))
+           (sym (cond
+                 ((eq state 'edited) "~")
+                 ((eq state 'added) "+")
+                 ((eq state 'removed) "-")
+                 ((memq state '(conflict needs-merge)) "!")
+                 ((eq state 'needs-update) "↓")
+                 ((eq state 'unregistered) "?"))))
+      (when sym
+        (propertize sym 'face (sleek-modeline-vc--state-face))))))
 
 (defun sleek-modeline-vc ()
-  "Show version control information with icon and branch name.
+  "Show version control info as [status-symbol] branch-name [icon].
+The branch name and icon use the mode-line foreground.
+The status symbol is state-coloured and leads the segment when present.
 Returns nil if not in a version-controlled file or if an error occurs."
   (condition-case nil
       (when-let ((branch (sleek-modeline-vc--branch-name)))
-        (let* ((icon (sleek-modeline-vc--branch-icon))
-               (face (sleek-modeline-vc--state-face))
-               (branch-str (propertize branch 'face face)))
-          (sleek-modeline--maybe-dim-or-hide
-           (if icon
-               (concat icon " " branch-str)
-             branch-str)
-           sleek-modeline-hide-vc-branch-inactive)))
+        (let* ((symbol (sleek-modeline-vc--status-symbol))
+               (branch-str (propertize branch 'face 'sleek-modeline-vc-face))
+               (icon (let ((raw (sleek-modeline-vc--branch-icon)))
+                       (when raw
+                         (let ((fg (face-foreground 'mode-line nil t)))
+                           (when fg
+                             (add-face-text-property 0 (length raw)
+                                                     `(:foreground ,fg) nil raw)))
+                         raw)))
+               (content (cond
+                         ((and symbol icon) (concat symbol " " branch-str " " icon))
+                         (symbol (concat symbol " " branch-str))
+                         (icon (concat branch-str " " icon))
+                         (t branch-str))))
+          (sleek-modeline--maybe-dim-or-hide content sleek-modeline-hide-vc-branch-inactive)))
     (error nil)))
+
+;;;###autoload
+(defun sleek-modeline-vc-enable ()
+  "Enable vc segment hook wiring for cache invalidation.
+Call this once inside `sleek-modeline-mode' activation."
+  (unless sleek-modeline-vc--enabled
+    (setq sleek-modeline-vc--enabled t)
+    (add-hook 'after-save-hook #'sleek-modeline-vc--invalidate-cache)
+    (add-hook 'find-file-hook #'sleek-modeline-vc--invalidate-cache)
+    (add-hook 'vc-checkin-hook #'sleek-modeline-vc--invalidate-cache)
+    (add-hook 'vc-post-command-functions #'sleek-modeline-vc--post-command)))
+
+(defun sleek-modeline-vc-disable ()
+  "Disable vc segment hook wiring and clear all buffer caches."
+  (when sleek-modeline-vc--enabled
+    (setq sleek-modeline-vc--enabled nil)
+    (remove-hook 'after-save-hook #'sleek-modeline-vc--invalidate-cache)
+    (remove-hook 'find-file-hook #'sleek-modeline-vc--invalidate-cache)
+    (remove-hook 'vc-checkin-hook #'sleek-modeline-vc--invalidate-cache)
+    (remove-hook 'vc-post-command-functions #'sleek-modeline-vc--post-command)
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (setq sleek-modeline-vc--state-cache 'unset)))))
 
 (provide 'sleek-modeline-vc)
 ;;; sleek-modeline-vc.el ends here
