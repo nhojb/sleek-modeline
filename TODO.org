@@ -19,6 +19,9 @@
 ** TODO Segment registry [0/1] :core:
 - [ ] Have segments auto-register.
     
+** DONE Miscellaneous [1/1] :misc:
+- [X] Global icon toggle.
+
 ** TODO CI checks [1/2] :ci:
 - [X] Add melpazoid workflow.
 - [ ] Add compilation workflow.
@@ -61,18 +64,21 @@
 - [ ] Buffer-local cache for ~vc-state~, invalidated via hooks: ~after-save-hook~, ~find-file-hook~, ~vc-checkin-hook~, ~vc-post-command-functions~.
 - [ ] Optional status symbol for at-a-glance state (e.g. ~●~ modified, ~+~ added, ~!~ conflict).
 
-** TODO Diagnostics (checker/linter) [2/3] :diagnostics:
+** DONE Diagnostics (checker/linter) [3/3] :diagnostics:
 NOTE(abi): use hook-driven cache for zero cost on redraw.
 - [X] Display info/warning/error counts with flycheck.
 - [X] Nerd-icons codicons & unicode icons (fallback).
-- [ ] Add flymake support.
+- [X] Add flymake support.
 
 ** DONE Project name segment [2/2] :core:
 - [X] Display the current project name with ~projectile~.
 - [X] Add ~project.el~ support.
 
-** TODO Eglot / lsp-mode segment [0/1] :lsp:
-- [ ] Display a small indicator when an LSP server is active in the buffer.
+** DONE Eglot/lsp-mode segment [3/3] :lsp:
+- [X] Display a small indicator when an LSP server is active.
+- [X] Optional server name display next to the icon.
+- [X] Echo server name on segment hover.
+- [X] Hide in inactive modelines.
 ** TODO Music playback [0/5] :music:
 - [ ] Spotify interoperability.
 - [ ] Display the current track & artist.
