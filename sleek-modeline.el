@@ -19,6 +19,8 @@
 (require 'sleek-modeline-vc)
 
 ;; Declare segment functions to quiet the byte-compiler
+(declare-function sleek-modeline-vc-enable "sleek-modeline-vc")
+(declare-function sleek-modeline-vc-disable "sleek-modeline-vc")
 (declare-function sleek-modeline-diagnostics-enable "sleek-modeline-diagnostics")
 (declare-function sleek-modeline-diagnostics-disable "sleek-modeline-diagnostics")
 (declare-function sleek-modeline-project "sleek-modeline-project")
@@ -162,6 +164,9 @@ we read `(face-background 'default ...)'."
         (advice-add 'load-theme :after #'sleek-modeline--after-theme-change)
         (advice-add 'enable-theme :after #'sleek-modeline--after-theme-change)
 
+	;; Enable vc segment cache hooks
+        (sleek-modeline-vc-enable)
+
 	;; Enable diagnostics segment if configured
 	(when sleek-modeline-enable-diagnostics
 	  (require 'sleek-modeline-diagnostics nil t)
@@ -208,6 +213,9 @@ we read `(face-background 'default ...)'."
                  #'sleek-modeline--deferred-face-update)
     (advice-remove 'load-theme #'sleek-modeline--after-theme-change)
     (advice-remove 'enable-theme #'sleek-modeline--after-theme-change)
+
+    ;; Disable vc segment cache hooks
+    (sleek-modeline-vc-disable)
 
     ;; Disable diagnostics segment if enabled
     (when sleek-modeline-enable-diagnostics
