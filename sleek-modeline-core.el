@@ -27,7 +27,7 @@ Each entry is a plist with keys.
               string: literal string to append after a non-nil result.
   :condition  symbol - Variable that must be non-nil to display the segment.
   :on-enable  symbol - Function called when `sleek-modeline-mode' activates.
-  :on-disable symbol - Function called when `sleek-modeline-mode' deactivates".)
+  :on-disable symbol - Function called when `sleek-modeline-mode' deactivates.")
 
 (defun sleek-modeline-register-segment (name &rest props)
   "Register a segment under NAME with the given PROPS plist.
@@ -386,26 +386,26 @@ Returns C1 unchanged when either color cannot be parsed."
                           :foreground (sleek-modeline--blend-colors shadow-fg bg 0.5)))))
 
 (sleek-modeline-register-segment 'modal-state
-  :fn 'sleek-modeline-modal-state-marker
-  :side 'left
-  :priority 0
-  :separator " ")
+				 :fn 'sleek-modeline-modal-state-marker
+				 :side 'left
+				 :priority 0
+				 :separator " ")
 
 (sleek-modeline-register-segment 'buffer-name
-  :fn 'sleek-modeline-buffer-name
-  :side 'left
-  :priority 20)
+				 :fn 'sleek-modeline-buffer-name
+				 :side 'left
+				 :priority 20)
 
 (sleek-modeline-register-segment 'line-ending
-  :fn 'sleek-modeline-line-ending-indicator
-  :side 'right
-  :priority 10
-  :separator t)
+				 :fn 'sleek-modeline-line-ending-indicator
+				 :side 'right
+				 :priority 10
+				 :separator t)
 
 (sleek-modeline-register-segment 'major-mode
-  :fn 'sleek-modeline-major-mode
-  :side 'right
-  :priority 40)
+				 :fn 'sleek-modeline-major-mode
+				 :side 'right
+				 :priority 40)
 
 (provide 'sleek-modeline-core)
 ;;; sleek-modeline-core.el ends here
