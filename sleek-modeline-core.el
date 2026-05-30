@@ -16,6 +16,28 @@
 ;; NOTE(abi): optional dependency; only gets loaded if available.
 (declare-function nerd-icons-icon-for-file "nerd-icons")
 
+(defvar sleek-modeline--segment-registry nil
+  "List of registered segment descriptors (plists).
+Each entry is a plist with keys.
+  :name       symbol - Unique segment identifier.
+  :fn         symbol — Display function (returns string or nil).
+  :side       `left' or `right'.
+  :priority   integer - Lower means closer to the outer edge.
+  :separator  nil | t | STRING — nil: no suffix; t: standard separator;
+              string: literal string to append after a non-nil result.
+  :condition  symbol - Variable that must be non-nil to display the segment.
+  :on-enable  symbol - Function called when `sleek-modeline-mode' activates.
+  :on-disable symbol - Function called when `sleek-modeline-mode' deactivates".)
+
+(defun sleek-modeline-register-segment (name &rest props)
+  "Register a segment under NAME with the given PROPS plist.
+If a segment with NAME already exists it is replaced.
+See `sleek-modeline--segment-registry' for valid keys."
+  (setq sleek-modeline--segment-registry
+        (cons (append (list :name name) props)
+              (seq-remove (lambda (s) (eq (plist-get s :name) name))
+                          sleek-modeline--segment-registry))))
+
 (defgroup sleek-modeline nil
   "Customization group for `sleek-modeline'."
   :group 'mode-line
