@@ -26,18 +26,23 @@
 - [X] Add melpazoid workflow.
 - [X] Add compilation workflow.
 
-** TODO README.org :docs:
-- [ ] Description.
-- [ ] Screenshots.
-- [ ] Installation & quick-start guide.
-- [ ] Customization reference, etc.
-- [ ] Contributions & license.
+** DONE README.org :docs:
+- [X] Description.
+- [X] Add a screenshot.
+- [X] Installation & quick-start guide.
+- [X] Customization reference, etc.
+- [X] Contributions.
+- [X] License.
 
-** TODO MELPA submission [2/3] :release:
+** TODO MELPA submission [7/8] :release:
 - [X] Verify package headers and package requires.
 - [X] Ensure all files byte-compile cleanly.
-- [ ] Tag a versioned release.
-
+- [X] Tag a versioned release.
+- [X] Perform checks & review conventions.
+- [X] Fork & clone melpa repository.
+- [X] Add a recipe.
+- [X] Push & add a PR.
+- [] Fix any issues.
 
 * Segments
 ** DONE Buffer name segment [3/3] :core:
