@@ -49,7 +49,7 @@ Supports `eglot' and `lsp-mode' backends."
   "Saved `mode-line-inactive' face attributes before sleek-modeline modified them.")
 
 (defvar sleek-modeline-format nil
-  "The sleek mode-line format. Built dynamically by `sleek-modeline--build-format'.")
+  "The sleek mode-line format.  Built by `sleek-modeline--build-format'.")
 
 (defvar sleek-modeline--default-mode-line mode-line-format
   "Storage for the default `mode-line-format'.")
