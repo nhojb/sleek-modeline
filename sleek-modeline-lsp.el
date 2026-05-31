@@ -16,6 +16,7 @@
 (require 'sleek-modeline-core)
 
 ;; Optional dependencies, declared to silence the byte-compiler
+;;
 ;; NOTE(abi): these get loaded only if available.
 (eval-when-compile
   (declare-function eglot-current-server "eglot")
@@ -187,13 +188,13 @@ Removes global hooks and clears cached state in all buffers."
         (setq sleek-modeline-lsp--cache nil)))))
 
 (sleek-modeline-register-segment 'lsp
-  :fn 'sleek-modeline-lsp
-  :side 'right
-  :priority 30
-  :separator t
-  :condition 'sleek-modeline-enable-lsp
-  :on-enable 'sleek-modeline-lsp-enable
-  :on-disable 'sleek-modeline-lsp-disable)
+				 :fn 'sleek-modeline-lsp
+				 :side 'right
+				 :priority 30
+				 :separator t
+				 :condition 'sleek-modeline-enable-lsp
+				 :on-enable 'sleek-modeline-lsp-enable
+				 :on-disable 'sleek-modeline-lsp-disable)
 
 (provide 'sleek-modeline-lsp)
 ;;; sleek-modeline-lsp.el ends here

@@ -49,7 +49,7 @@ Supports `eglot' and `lsp-mode' backends."
   "Saved `mode-line-inactive' face attributes before sleek-modeline modified them.")
 
 (defvar sleek-modeline-format nil
-  "The sleek mode-line format. Built dynamically by `sleek-modeline--build-format'.")
+  "The sleek mode-line format.  Built by `sleek-modeline--build-format'.")
 
 (defvar sleek-modeline--default-mode-line mode-line-format
   "Storage for the default `mode-line-format'.")
@@ -125,10 +125,10 @@ we read `(face-background \='default ...)'."
     (remove-hook 'after-make-frame-functions
                  #'sleek-modeline--deferred-face-update)
 
-    ;; Defer to the next idle moment so that the new frame is fully
-    ;; realised (theme applied, `default' background set).  Without this,
-    ;; `face-background' can still return the pre-theme colour that the
-    ;; daemon's initial frame had.
+    ;; NOTE(abi): defer to the next idle moment so the new frame is fully
+    ;;            realised (theme applied, `default' background set).  Otherwise
+    ;;            `face-background' may still return the daemon initial frame's
+    ;;            pre-theme colour.
     (let ((target-frame (or frame (selected-frame))))
       (run-with-idle-timer
        0 nil
@@ -186,12 +186,12 @@ we read `(face-background \='default ...)'."
                        (or (null condition) (symbol-value condition)))
               (funcall on-enable))))
 
-	;; Update faces now if a real (non-daemon-initial) frame exists;
-	;; otherwise defer the first update until a client frame shows up.
-	;; This fixes the startup-in-daemon-mode colour bug where faces were
-	;; computed against the daemon's initial frame (whose `default'
-	;; background is unthemed), producing a too-bright modeline until
-	;; the server was restarted.
+	;; Update faces now if a real (non-daemon-initial) frame exists,
+	;; otherwise defer the first update until a client frame shows up
+	;;
+	;; IMPORTANT(abi): this fixes a daemon-startup colour bug where faces were
+	;;                 computed against the initial frame's unthemed `default'
+	;;                 background, leaving the wrong face until a server restart.
 	(if (sleek-modeline--graphical-frame-exists-p)
 	    (sleek-modeline--update-faces)
 	  (add-hook 'server-after-make-frame-hook

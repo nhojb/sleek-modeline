@@ -13,7 +13,7 @@
 
 (require 'sleek-modeline-core)
 
-;; Optional dependencies, declared to silence the byte-compiler.
+;; NOTE(abi): optional dependencies, declared to silence the byte-compiler.
 (eval-when-compile
   (declare-function projectile-project-name "projectile")
   (declare-function project-current "project")
@@ -58,11 +58,11 @@ Prefers `projectile' when active, falls back to `project.el'."
     (error nil)))
 
 (sleek-modeline-register-segment 'project
-  :fn 'sleek-modeline-project
-  :side 'left
-  :priority 10
-  :separator t
-  :condition 'sleek-modeline-enable-project)
+				 :fn 'sleek-modeline-project
+				 :side 'left
+				 :priority 10
+				 :separator t
+				 :condition 'sleek-modeline-enable-project)
 
 (provide 'sleek-modeline-project)
 ;;; sleek-modeline-project.el ends here

@@ -273,9 +273,9 @@ Returns the box line-width value to use for the mode-line."
 Derives mode-line backgrounds by darkening the current `default' face,
 ensuring the modeline is always visually distinct from buffer content."
   (let* ((modeline-height (sleek-modeline--get-height))
-         ;; NOTE(abi): `face-background' can return nil or unspecified-bg on terminal
-         ;; frames or before a theme has set the default face.  We filter those out so
-         ;; that colour blending functions never receive unparsable input.
+         ;; NOTE(abi): `face-background' can return nil or unspecified-bg on terminal frames
+         ;;            or before a theme has set the default face.  We filter those out so
+         ;;            that colour blending functions never receive unparsable input.
          (raw-background (or sleek-modeline-background
                              (face-background 'default nil t)))
          (default-background (if (sleek-modeline--valid-color-p raw-background)

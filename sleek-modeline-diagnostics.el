@@ -14,6 +14,7 @@
 (require 'sleek-modeline-core)
 
 ;; Optional dependencies, declared to silence the byte-compiler
+;;
 ;; NOTE(abi): these get loaded only if available.
 (eval-when-compile
   (declare-function flycheck-count-errors "flycheck")
@@ -220,13 +221,13 @@ This ensures no buffer-local hooks or cached state remain."
           (sleek-modeline-diagnostics--flymake-teardown))))))
 
 (sleek-modeline-register-segment 'diagnostics
-  :fn 'sleek-modeline-diagnostics
-  :side 'right
-  :priority 0
-  :separator t
-  :condition 'sleek-modeline-enable-diagnostics
-  :on-enable 'sleek-modeline-diagnostics-enable
-  :on-disable 'sleek-modeline-diagnostics-disable)
+				 :fn 'sleek-modeline-diagnostics
+				 :side 'right
+				 :priority 0
+				 :separator t
+				 :condition 'sleek-modeline-enable-diagnostics
+				 :on-enable 'sleek-modeline-diagnostics-enable
+				 :on-disable 'sleek-modeline-diagnostics-disable)
 
 (provide 'sleek-modeline-diagnostics)
 ;;; sleek-modeline-diagnostics.el ends here
