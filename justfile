@@ -29,6 +29,21 @@ autoloads:
 check:
     @{{batch}} --eval "(check-declare-directory default-directory)"
 
+# Check documentation strings
+checkdoc:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    status=0
+    for f in {{files}}; do
+        out=$({{batch}} --eval "(checkdoc-file \"$f\")" 2>&1 || true)
+        if [ -n "$out" ]; then
+            printf '%s\n' "$out"
+            status=1
+        fi
+    done
+    if [ "$status" -eq 0 ]; then echo "checkdoc: clean"; fi
+    exit "$status"
+
 # Lint the main package file
 lint:
     @{{batch}} \
@@ -41,7 +56,7 @@ lint:
                   (package-install 'package-lint))" \
         --eval "(require 'package-lint)" \
         -f package-lint-batch-and-exit {{pkg}}.el
-	
+
 # Wipe build artifacts & lint dependency cache
 clean:
     @rm -f *.elc {{pkg}}-autoloads.el
