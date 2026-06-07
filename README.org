@@ -6,6 +6,7 @@
 #+html: <a href="https://github.com/abidanBrito/sleek-modeline/actions/workflows/compile.yml"><img alt="Build" src="https://github.com/abidanBrito/sleek-modeline/actions/workflows/compile.yml/badge.svg"/></a>
 #+html: <a href="https://github.com/abidanBrito/sleek-modeline/actions/workflows/melpazoid.yml"><img alt="Melpazoid" src="https://github.com/abidanBrito/sleek-modeline/actions/workflows/melpazoid.yml/badge.svg"/></a>
 #+html: <img alt="GNU Emacs" src="https://img.shields.io/badge/GNU_Emacs-29.1%2B-blueviolet.svg"/>
+#+html: <a href="https://melpa.org/#/sleek-modeline"><img alt="MELPA" src="https://melpa.org/packages/sleek-modeline-badge.svg"/></a>
 #+html: <a href="https://github.com/abidanBrito/sleek-modeline/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-orange.svg"/></a>
 #+html: </div>
 
