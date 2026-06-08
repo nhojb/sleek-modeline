@@ -20,10 +20,10 @@
   "List of registered segment descriptors (plists).
 Each entry is a plist with keys.
   :name       symbol - Unique segment identifier.
-  :fn         symbol — Display function (returns string or nil).
+  :fn         symbol - Display function (returns string or nil).
   :side       `left' or `right'.
   :priority   integer - Lower means closer to the outer edge.
-  :separator  nil | t | STRING — nil: no suffix; t: standard separator;
+  :separator  nil | t | STRING - nil: no suffix; t: standard separator;
               string: literal string to append after a non-nil result.
   :condition  symbol - Variable that must be non-nil to display the segment.
   :on-enable  symbol - Function called when `sleek-modeline-mode' activates.
@@ -365,7 +365,7 @@ ensuring the modeline is always visually distinct from buffer content."
     (0 "LF")
     (1 "CRLF")
     (2 "CR")
-    (_ "—")))
+    (_ "-")))
 
 (defun sleek-modeline-line-ending-indicator ()
   "Return a propertized line ending string for file-backed buffers, or nil.
