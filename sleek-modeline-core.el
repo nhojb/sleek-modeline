@@ -116,9 +116,19 @@ When non-nil, modified buffers will use
   "Face for buffer name in `sleek-modeline'."
   :group 'sleek-modeline-faces)
 
+(defface sleek-modeline-buffer-name-highlight-face
+  '((t (:inherit sleek-modeline-buffer-name-face :underline t)))
+  "Face used to highlight the buffer name segment on mouse hover."
+  :group 'sleek-modeline-faces)
+
 (defface sleek-modeline-buffer-name-modified-face
   '((t (:inherit warning :weight bold)))
   "Face for modified buffer name in `sleek-modeline'."
+  :group 'sleek-modeline-faces)
+
+(defface sleek-modeline-buffer-name-modified-highlight-face
+  '((t (:inherit sleek-modeline-buffer-name-modified-face :underline t)))
+  "Face used to highlight a modified buffer name on mouse hover."
   :group 'sleek-modeline-faces)
 
 (defface sleek-modeline-major-mode-face
@@ -207,15 +217,25 @@ the mode-line is inactive according to configuration."
                           (featurep 'nerd-icons))
                  (nerd-icons-icon-for-file file-name)))
          (buffer-name (substring-no-properties (format-mode-line "%b")))
-         (face (if (and sleek-modeline-highlight-modified-buffer-name
-                        (buffer-modified-p))
+         (modified (and sleek-modeline-highlight-modified-buffer-name
+                        (buffer-modified-p)))
+         (face (if modified
                    'sleek-modeline-buffer-name-modified-face
                  'sleek-modeline-buffer-name-face))
+         (highlight-face (if modified
+                             'sleek-modeline-buffer-name-modified-highlight-face
+                           'sleek-modeline-buffer-name-highlight-face))
          (icon (sleek-modeline--maybe-dim-or-hide
                 icon
                 sleek-modeline-hide-file-icon-inactive))
          (buffer-name (sleek-modeline--maybe-dim-or-hide
-                       (propertize buffer-name 'face face) nil)))
+                       (propertize buffer-name
+                                   'face face
+                                   'mouse-face highlight-face
+                                   'help-echo (if file-name
+                                                  (abbreviate-file-name file-name)
+                                                "Buffer is not associated to a file"))
+                       nil)))
     (if icon (concat icon " " buffer-name) buffer-name)))
 
 (defun sleek-modeline--active-minor-modes ()
