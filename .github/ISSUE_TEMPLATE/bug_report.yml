@@ -1,0 +1,65 @@
+name: Bug report
+description: Report something that is broken or behaving oddly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. Please fill in the fields below so the issue can be reproduced.
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      options:
+        - label: I have searched existing issues and this has not been reported yet.
+          required: true
+        - label: I am on the latest version of sleek-modeline.
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Ideally starting from `emacs -Q`. Include a minimal config if possible.
+      placeholder: |
+        1. Start `emacs -Q`.
+        2. Load sleek-modeline with '...'.
+        3. Open a file in '...'.
+        4. See the wrong behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: This is a visual package. And as they say, an image is worth a thousand words. Drag images in here.
+    validations:
+      required: false
+  - type: input
+    id: emacs-version
+    attributes:
+      label: Emacs version
+      description: Output of `M-x emacs-version`.
+      placeholder: "GNU Emacs 30.1"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, relevant packages (evil/meow, projectile/project.el, eglot/lsp-mode, flycheck/flymake, nerd-icons), and your sleek-modeline settings.
+    validations:
+      required: true

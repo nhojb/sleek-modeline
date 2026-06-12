@@ -180,7 +180,7 @@ Top-level switches for optional segments. Disabling one prevents its package fro
 
 * Contributing
 
-Contributions are welcome. Please open an issue or pull request on [[https://github.com/abidanBrito/sleek-modeline][GitHub]].
+Contributions are welcome. Please *open an issue before sending a pull request*. See [[file:CONTRIBUTING.org][CONTRIBUTING.org]] for the full workflow and guidelines.
 
 When reporting a bug, include:
 

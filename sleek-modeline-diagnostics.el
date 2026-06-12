@@ -187,16 +187,12 @@ is integrated automatically in buffers where a checker activates.
 Call this once inside `sleek-modeline-mode' activation."
   (unless sleek-modeline-diagnostics--enabled
     (setq sleek-modeline-diagnostics--enabled t)
-    (with-eval-after-load 'flycheck
-      (when sleek-modeline-diagnostics--enabled
-        (add-hook 'flycheck-mode-hook
-                  #'sleek-modeline-diagnostics--flycheck-mode-hook)))
-    (with-eval-after-load 'flymake
-      (when sleek-modeline-diagnostics--enabled
-        (advice-add 'flymake--publish-diagnostics :after
-                    #'sleek-modeline-diagnostics--flymake-update)
-        (add-hook 'flymake-mode-hook
-                  #'sleek-modeline-diagnostics--flymake-mode-hook)))))
+    (add-hook 'flycheck-mode-hook
+              #'sleek-modeline-diagnostics--flycheck-mode-hook)
+    (add-hook 'flymake-mode-hook
+              #'sleek-modeline-diagnostics--flymake-mode-hook)
+    (advice-add 'flymake--publish-diagnostics :after
+		#'sleek-modeline-diagnostics--flymake-update)))
 
 (defun sleek-modeline-diagnostics-disable ()
   "Disable diagnostics segment integration.
@@ -205,14 +201,12 @@ tracking in all existing buffers where it was active.
 This ensures no buffer-local hooks or cached state remain."
   (when sleek-modeline-diagnostics--enabled
     (setq sleek-modeline-diagnostics--enabled nil)
-    (when (featurep 'flycheck)
-      (remove-hook 'flycheck-mode-hook
-                   #'sleek-modeline-diagnostics--flycheck-mode-hook))
-    (when (featurep 'flymake)
-      (advice-remove 'flymake--publish-diagnostics
-                     #'sleek-modeline-diagnostics--flymake-update)
-      (remove-hook 'flymake-mode-hook
-                   #'sleek-modeline-diagnostics--flymake-mode-hook))
+    (remove-hook 'flycheck-mode-hook
+                 #'sleek-modeline-diagnostics--flycheck-mode-hook)
+    (remove-hook 'flymake-mode-hook
+                 #'sleek-modeline-diagnostics--flymake-mode-hook)
+    (advice-remove 'flymake--publish-diagnostics
+                   #'sleek-modeline-diagnostics--flymake-update)
     (dolist (buf (buffer-list))
       (with-current-buffer buf
         (when (bound-and-true-p flycheck-mode)
