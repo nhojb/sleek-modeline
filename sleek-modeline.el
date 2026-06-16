@@ -42,11 +42,32 @@ Supports `eglot' and `lsp-mode' backends."
   :type 'integer
   :group 'sleek-modeline)
 
+(defcustom sleek-modeline-suppress-default-mouse t
+  "Whether to suppress Emacs' default mode-line mouse behavior.
+When non-nil, the stock mouse actions on bare mode-line areas
+and their echo area hints are disabled.  Only the mouse events
+explicitly assigned by `sleek-modeline' segments remain active."
+  :type 'boolean
+  :group 'sleek-modeline)
+
 (defvar sleek-modeline--saved-modeline-attrs nil
   "Saved `mode-line' face attributes before sleek-modeline modified them.")
 
 (defvar sleek-modeline--saved-modeline-inactive-attrs nil
   "Saved `mode-line-inactive' face attributes before sleek-modeline modified them.")
+
+(defvar sleek-modeline--default-mouse-events
+  '([mode-line down-mouse-1]
+    [mode-line mouse-1]
+    [mode-line mouse-2]
+    [mode-line mouse-3])
+  "Mode-line mouse events whose default global bindings are suppressed.")
+
+(defvar sleek-modeline--saved-mouse-bindings nil
+  "Alist of (EVENT . BINDING) saved before suppressing default mouse events.")
+
+(defvar sleek-modeline--saved-default-help-echo 'unset
+  "Storage for the value of variable `mode-line-default-help-echo'.")
 
 (defvar sleek-modeline-format nil
   "The sleek mode-line format.  Built by `sleek-modeline--build-format'.")
@@ -86,6 +107,28 @@ Supports `eglot' and `lsp-mode' backends."
             mode-line-format-right-align
             ,@(mapcar #'sleek-modeline--segment-eval-form right)
             (:eval (make-string sleek-modeline-edge-padding ?\s))))))
+
+(defun sleek-modeline--suppress-default-mouse ()
+  "Disable Emacs' default mode-line mouse actions and echo area hints.
+Saves the prior global bindings and variable `mode-line-default-help-echo'
+so that they can be restored by `sleek-modeline--restore-default-mouse'."
+  (setq sleek-modeline--saved-mouse-bindings
+        (mapcar (lambda (event)
+                  (cons event (lookup-key global-map event)))
+                sleek-modeline--default-mouse-events))
+  (dolist (event sleek-modeline--default-mouse-events)
+    (define-key global-map event #'ignore))
+  (setq sleek-modeline--saved-default-help-echo mode-line-default-help-echo)
+  (setq mode-line-default-help-echo nil))
+
+(defun sleek-modeline--restore-default-mouse ()
+  "Restore the default mode-line mouse bindings and echo area hints."
+  (dolist (entry sleek-modeline--saved-mouse-bindings)
+    (define-key global-map (car entry) (cdr entry)))
+  (setq sleek-modeline--saved-mouse-bindings nil)
+  (unless (eq sleek-modeline--saved-default-help-echo 'unset)
+    (setq mode-line-default-help-echo sleek-modeline--saved-default-help-echo)
+    (setq sleek-modeline--saved-default-help-echo 'unset)))
 
 (defun sleek-modeline--after-theme-change (&rest _)
   "Update faces after theme change."
@@ -173,6 +216,10 @@ we read `(face-background \='default ...)'."
 	;; Apply `sleek-modeline' format
         (setq-default mode-line-format sleek-modeline-format)
 
+	;; Suppress Emacs' default mode-line mouse actions
+	(when sleek-modeline-suppress-default-mouse
+	  (sleek-modeline--suppress-default-mouse))
+
 	;; Update faces after a theme change
         (add-hook 'after-load-theme-hook #'sleek-modeline--update-faces)
         (advice-add 'load-theme :after #'sleek-modeline--after-theme-change)
@@ -199,13 +246,15 @@ we read `(face-background \='default ...)'."
 	  (add-hook 'after-make-frame-functions
 		    #'sleek-modeline--deferred-face-update)))
 
-    ;; Restore original format & face attributes
+    ;; Restore original format, faces & mouse behaviour
     (setq-default mode-line-format sleek-modeline--default-mode-line)
 
-    ;; Restore saved faces
+    (sleek-modeline--restore-default-mouse)
+
     (when sleek-modeline--saved-modeline-attrs
       (apply #'set-face-attribute 'mode-line nil
              sleek-modeline--saved-modeline-attrs))
+
     (when sleek-modeline--saved-modeline-inactive-attrs
       (apply #'set-face-attribute 'mode-line-inactive nil
              sleek-modeline--saved-modeline-inactive-attrs))
@@ -216,6 +265,7 @@ we read `(face-background \='default ...)'."
                  #'sleek-modeline--deferred-face-update)
     (remove-hook 'after-make-frame-functions
                  #'sleek-modeline--deferred-face-update)
+
     (advice-remove 'load-theme #'sleek-modeline--after-theme-change)
     (advice-remove 'enable-theme #'sleek-modeline--after-theme-change)
 

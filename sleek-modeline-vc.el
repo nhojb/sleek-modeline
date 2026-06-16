@@ -126,6 +126,38 @@ Returns nil if not in a version-controlled file."
       (when sym
         (propertize sym 'face (sleek-modeline-vc--state-face))))))
 
+(defun sleek-modeline-vc--git-ahead-behind ()
+  "Return (BEHIND . AHEAD) commit counts versus the upstream branch, or nil.
+BEHIND is the number of commits to pull (down); AHEAD is the number to push
+\(up).  Returns nil when Git is unavailable, there is no upstream, or the
+command fails."
+  (when (executable-find "git")
+    (let ((dir default-directory))
+      (with-temp-buffer
+        (setq default-directory dir)
+        (when (eq 0 (ignore-errors
+                      (process-file "git" nil t nil "rev-list"
+                                    "--count" "--left-right" "@{upstream}...HEAD")))
+          (goto-char (point-min))
+          (when (looking-at "\\([0-9]+\\)[ \t]+\\([0-9]+\\)")
+            (cons (string-to-number (match-string 1))
+                  (string-to-number (match-string 2)))))))))
+
+(defun sleek-modeline-vc--help-echo (window _object _pos)
+  "Return the version control echo area tooltip for WINDOW's buffer, or nil.
+Shows the VC backend and, for Git, the commit counts relative to the
+upstream branch."
+  (with-current-buffer (window-buffer window)
+    (when-let ((backend (and buffer-file-name (vc-backend buffer-file-name))))
+      (let ((name (symbol-name backend)))
+        (if (not (eq backend 'Git)) name
+          (let ((ab (sleek-modeline-vc--git-ahead-behind)))
+            (cond
+             ((null ab) name)
+             ((and (zerop (car ab)) (zerop (cdr ab)))
+              (format "%s :: up to date" name))
+             (t (format "%s :: %d ↓, %d ↑" name (car ab) (cdr ab))))))))))
+
 (defun sleek-modeline-vc ()
   "Show version control info as [status-symbol] branch-name [icon].
 The branch name and icon use the mode-line foreground.
@@ -147,7 +179,9 @@ Returns nil if not in a version-controlled file or if an error occurs."
                          (symbol (concat symbol " " branch-str))
                          (icon (concat branch-str " " icon))
                          (t branch-str))))
-          (sleek-modeline--maybe-dim-or-hide content sleek-modeline-hide-vc-branch-inactive)))
+          (sleek-modeline--maybe-dim-or-hide
+           (propertize content 'help-echo #'sleek-modeline-vc--help-echo)
+           sleek-modeline-hide-vc-branch-inactive)))
     (error nil)))
 
 ;;;###autoload
@@ -174,12 +208,12 @@ Call this once inside `sleek-modeline-mode' activation."
         (setq sleek-modeline-vc--state-cache 'unset)))))
 
 (sleek-modeline-register-segment 'vc
-  :fn 'sleek-modeline-vc
-  :side 'right
-  :priority 20
-  :separator t
-  :on-enable 'sleek-modeline-vc-enable
-  :on-disable 'sleek-modeline-vc-disable)
+				 :fn 'sleek-modeline-vc
+				 :side 'right
+				 :priority 20
+				 :separator t
+				 :on-enable 'sleek-modeline-vc-enable
+				 :on-disable 'sleek-modeline-vc-disable)
 
 (provide 'sleek-modeline-vc)
 ;;; sleek-modeline-vc.el ends here
